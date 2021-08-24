@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/lime/AndroidStudioProjects/AndroidBle/app/src/main/res/layout/recyclerview_item.xml" value="0.5536458333333333" />
         <entry key="..\:/Users/lime/AndroidStudioProjects/BleTestActivity/app/src/main/res/layout/activity_main.xml" value="0.33" />
         <entry key="..\:/Users/lime/AndroidStudioProjects/BleTestActivity/app/src/main/res/layout/recyclerview_item.xml" value="0.5536458333333333" />
       </map>
