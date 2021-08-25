@@ -25,6 +25,8 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.bletestactivity.databinding.ActivityMainBinding
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 class MainActivity : AppCompatActivity() {
@@ -45,6 +47,63 @@ class MainActivity : AppCompatActivity() {
     private var bleGatt: BluetoothGatt? = null
     private var mContext:Context? = null
 
+    @TargetApi(Build.VERSION_CODES.M)
+    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        mContext = this
+        val bleOnOffBtn:ToggleButton = findViewById(R.id.ble_on_off_btn)
+        val scanBtn: Button = findViewById(R.id.scanBtn)
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        viewManager = LinearLayoutManager(this)
+
+        recyclerViewAdapter =  RecyclerViewAdapter(devicesArr)
+        recyclerViewAdapter.mListener = object : RecyclerViewAdapter.OnItemClickListener{
+            override fun onClick(view: View, position: Int) {
+                scanDevice(false) // scan 중지
+                val device = devicesArr.get(position)
+                bleGatt =  DeviceControlActivity(mContext, bleGatt).connectGatt(device)
+            }
+        }
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView).apply {
+            layoutManager = viewManager
+            adapter = recyclerViewAdapter
+        }
+
+        if(bluetoothAdapter!=null){
+            if(bluetoothAdapter?.isEnabled==false){
+                bleOnOffBtn.isChecked = true
+                scanBtn.isVisible = false
+            } else{
+                bleOnOffBtn.isChecked = false
+                scanBtn.isVisible = true
+            }
+        }
+
+        bleOnOffBtn.setOnCheckedChangeListener { _, isChecked ->
+            bluetoothOnOff()
+            scanBtn.visibility = if (scanBtn.visibility == View.VISIBLE){ View.INVISIBLE } else{ View.VISIBLE }
+            if (scanBtn.visibility == View.INVISIBLE){
+                scanDevice(false)
+                devicesArr.clear()
+                recyclerViewAdapter.notifyDataSetChanged()
+            }
+        }
+
+        scanBtn.setOnClickListener { v:View? -> // Scan Button Onclick
+            if (!hasPermissions(this, PERMISSIONS)) {
+                requestPermissions(PERMISSIONS, REQUEST_ALL_PERMISSION)
+            }
+            scanDevice(true)
+        }
+
+    }
+
+//    companion object{
+//        val UUID_DATA_WRITE = UUID.fromString("temp")
+//    }
     private val mLeScanCallback = @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     object : ScanCallback() {
         override fun onScanFailed(errorCode: Int) {
@@ -119,58 +178,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.M)
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        mContext = this
-        val bleOnOffBtn:ToggleButton = findViewById(R.id.ble_on_off_btn)
-        val scanBtn: Button = findViewById(R.id.scanBtn)
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        viewManager = LinearLayoutManager(this)
 
-        recyclerViewAdapter =  RecyclerViewAdapter(devicesArr)
-        recyclerViewAdapter.mListener = object : RecyclerViewAdapter.OnItemClickListener{
-            override fun onClick(view: View, position: Int) {
-                scanDevice(false) // scan 중지
-                val device = devicesArr.get(position)
-                bleGatt =  DeviceControlActivity(mContext, bleGatt).connectGatt(device)
-            }
-        }
-        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView).apply {
-            layoutManager = viewManager
-            adapter = recyclerViewAdapter
-        }
-
-        if(bluetoothAdapter!=null){
-            if(bluetoothAdapter?.isEnabled==false){
-                bleOnOffBtn.isChecked = true
-                scanBtn.isVisible = false
-            } else{
-                bleOnOffBtn.isChecked = false
-                scanBtn.isVisible = true
-            }
-        }
-
-        bleOnOffBtn.setOnCheckedChangeListener { _, isChecked ->
-            bluetoothOnOff()
-            scanBtn.visibility = if (scanBtn.visibility == View.VISIBLE){ View.INVISIBLE } else{ View.VISIBLE }
-            if (scanBtn.visibility == View.INVISIBLE){
-                scanDevice(false)
-                devicesArr.clear()
-                recyclerViewAdapter.notifyDataSetChanged()
-            }
-        }
-
-        scanBtn.setOnClickListener { v:View? -> // Scan Button Onclick
-            if (!hasPermissions(this, PERMISSIONS)) {
-                requestPermissions(PERMISSIONS, REQUEST_ALL_PERMISSION)
-            }
-            scanDevice(true)
-        }
-
-    }
     fun bluetoothOnOff(){
         if (bluetoothAdapter == null) {
             // Device doesn't support Bluetooth
